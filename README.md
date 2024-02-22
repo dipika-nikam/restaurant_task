@@ -61,3 +61,7 @@ Main URL: http://localhost:3000/api/restaurants/
 ## Postman Collection
 
 https://api.postman.com/collections/23194037-ca3a6017-1a3e-45c7-bd2b-46942283fc95?access_key=PMAT-01HQ86PM3C0B1NEQE64CDKPNJG
+
+## API Documentation
+
+https://documenter.getpostman.com/view/23194037/2sA2rAzhfX
