@@ -1,6 +1,33 @@
 import { Request, Response } from 'express';
-import Restaurant from '../models/restaurant.model';
-import {IRestaurant} from '../interfaces/restaurant.interface';
+import { IRestaurant } from '../interfaces/restaurant.interface';
+import * as RestaurantQueryService from '../services/restaurant.service';
+
+/**
+ * Create Restaurant
+ *
+ * @body name, address, cuisineType, latitude, longitude
+ *
+ * @returns { Restaurant }
+*/
+export const createRestaurant = async (req: Request, res: Response) => {
+  const { name, address, cuisineType, latitude, longitude } = req.body;
+  try {
+    const newRestaurant = await RestaurantQueryService.createRestaurantService(name, address, cuisineType, latitude, longitude);
+    return res.status(201).json({
+      status: 201,
+      message: "Your restaurant is added",
+      error: false,
+      data: newRestaurant
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: 500,
+      message: "Internal server error",
+      error: true,
+      data: []
+    });
+  }
+};
 
 /**
  * Get near by Restaurant
@@ -19,7 +46,7 @@ export const getNearbyRestaurants = async (req: Request, res: Response) => {
   if (!latitude || !longitude || !radius) {
     return res.status(400).json({
       status: 400,
-      meassage: "Latitude, longitude, and radius are required.",
+      message: "Latitude, longitude, and radius are required.",
       error: true,
       data: []
     });
@@ -32,29 +59,19 @@ export const getNearbyRestaurants = async (req: Request, res: Response) => {
   if (isNaN(parsedLatitude) || isNaN(parsedLongitude) || isNaN(parsedRadius) || parsedRadius < 0) {
     return res.status(400).json({
       status: 400,
-      meassage: "'Invalid input. Latitude, longitude, and radius must be valid non-negative numbers.",
+      message: "Invalid input. Latitude, longitude, and radius must be valid non-negative numbers.",
       error: true,
       data: []
     });
   }
 
   try {
-    const restaurants = await Restaurant.find({
-      location: {
-        $near: {
-          $geometry: {
-            type: 'Point',
-            coordinates: [parsedLongitude, parsedLatitude],
-          },
-          $maxDistance: parsedRadius
-        }
-      }
-    });
+    const restaurants = await RestaurantQueryService.findRestaurantsNearLocation(parsedLongitude, parsedLatitude, parsedRadius);
    
     if(restaurants.length === 0){
       return res.status(404).json({
         status: 404,
-        meassage: "Data not found",
+        message: "Data not found",
         error: false,
         data: []
       });
@@ -65,7 +82,7 @@ export const getNearbyRestaurants = async (req: Request, res: Response) => {
     });
     return res.status(200).json({
       status: 200,
-      meassage: "This are the retaurant near by you",
+      message: "These are the restaurants near you",
       error: false,
       data: restaurantsname
     });
@@ -73,13 +90,12 @@ export const getNearbyRestaurants = async (req: Request, res: Response) => {
   } catch (error) {
     return res.status(500).json({
       status: 500,
-      meassage: "Internal server error",
+      message: "Internal server error",
       error: true,
       data: []
     });
   }
 };
-
 
 /**
  * List of all Restaurant
@@ -91,35 +107,30 @@ export const getNearbyRestaurants = async (req: Request, res: Response) => {
 
 export const getAllRestaurants = async (req: Request, res: Response) => {
   try {
-    const restaurants = await Restaurant.find();
+    const restaurants = await RestaurantQueryService.findAllRestaurants();
     if (restaurants.length === 0){
       return res.status(404).json({
         status: 404,
-        meassage: "Data not found",
+        message: "Data not found",
         error: false,
         data: []
       });
     }
-    const restaurantsname = restaurants.map((restaurant: IRestaurant) => {
-      const { location, ...rest } = restaurant.toObject();
-      return rest;
-    });
     return res.status(200).json({
       status: 200,
-      meassage: "It is a list of restaurants",
+      message: "List of restaurants",
       error: false,
-      data: restaurantsname
+      data: restaurants
     });
   } catch (error) {
     return res.status(500).json({
       status: 200,
-      meassage: "Internal server error",
+      message: "Internal server error",
       error: true,
       data: []
     });
   }
 };
-
 
 /**
  * Delete Restaurant
@@ -132,7 +143,7 @@ export const getAllRestaurants = async (req: Request, res: Response) => {
 export const deleteRestaurantById = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    const deletedRestaurant = await Restaurant.findByIdAndDelete(id);
+    const deletedRestaurant = await RestaurantQueryService.deleteRestaurantById(id);
     if (!deletedRestaurant) {
       return res.status(404).json({
         status: 404,
